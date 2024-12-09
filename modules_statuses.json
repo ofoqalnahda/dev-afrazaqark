@@ -1,0 +1,11 @@
+{
+    "Auth": true,
+    "Customer": true,
+    "Slider": true,
+    "Home": true,
+    "Info": true,
+    "Setting": true,
+    "Sort": true,
+    "Admin": true,
+    "Notification": true
+}

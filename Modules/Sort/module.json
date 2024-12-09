@@ -1,0 +1,11 @@
+{
+    "name": "Sort",
+    "alias": "sort",
+    "description": "",
+    "keywords": [],
+    "priority": 0,
+    "providers": [
+        "Modules\\Sort\\App\\Http\\Providers\\SortServiceProvider"
+    ],
+    "files": []
+}
