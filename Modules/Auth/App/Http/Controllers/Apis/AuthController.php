@@ -24,7 +24,7 @@ class AuthController extends ApiController
     public function __construct(AuthUtil $authUtil)
     {
         $this->authUtil = $authUtil;
-        $this->middleware('auth.gard:api', ['except' => ['login', 'register', 'checkPhone', 'SendCode','forgetPassword', 'ActiveRemoveAccount']]);
+        $this->middleware('auth.gard:api', ['except' => ['login', 'register','checkCode', 'checkPhone', 'SendCode','forgetPassword', 'ActiveRemoveAccount']]);
     }
 
 
