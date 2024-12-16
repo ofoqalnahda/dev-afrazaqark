@@ -5,8 +5,10 @@ namespace Modules\Auth\App\Http\Controllers\Apis;
 
 
 use App\Http\Controllers\ApiController;
-use File;
+use Illuminate\Contracts\Routing\ResponseFactory;
+use Illuminate\Foundation\Application;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
@@ -28,7 +30,7 @@ class AuthController extends ApiController
     }
 
 
-    public function login(Request $request)
+    public function login(Request $request): Application|Response|ResponseFactory
     {
         $validator = validator($request->all(), [
             'phone' => 'required|digits:10|starts_with:05',
@@ -62,7 +64,7 @@ class AuthController extends ApiController
     }
 
 
-    public function register(Request $request)
+    public function register(Request $request): Application|Response|ResponseFactory
     {
         $validator = validator($request->all(), [
             'name' => 'nullable|string|between:2,200',
@@ -84,25 +86,24 @@ class AuthController extends ApiController
             return responseApi(200, translate('user registered'), $data);
         } catch (\Exception $exception) {
             DB::rollBack();
-            dd($exception);
             Log::emergency('File: ' . $exception->getFile() . 'Line: ' . $exception->getLine() . 'Message: ' . $exception->getMessage());
             return responseApiFalse(500, translate('Something went wrong'));
         }
     }
 
-    public function logout()
+    public function logout(): Application|Response|ResponseFactory
     {
         auth('api')->logout();
         return responseApi(200, translate('user logout'));
     }
 
-    public function refresh()
+    public function refresh(): Application|Response|ResponseFactory
     {
         return responseApi(200, translate('user login'), $this->createNewToken(auth('api')->refresh()));
     }
 
 
-    public function SendCode(Request $request)
+    public function SendCode(Request $request): Application|Response|ResponseFactory
     {
         $validator = validator($request->all(), [
             'user_id' => 'required|integer|exists:users,id',
@@ -122,7 +123,7 @@ class AuthController extends ApiController
         return responseApiFalse(405, translate('user not found'));
     }
 
-    public function checkCode(Request $request)
+    public function checkCode(Request $request): Application|Response|ResponseFactory
     {
         $validator = validator($request->all(), [
             'user_id' => 'required|integer|exists:users,id',
@@ -153,13 +154,12 @@ class AuthController extends ApiController
             return responseApiFalse(500, translate('activation code is incorrect'));
         } catch (\Exception $exception) {
             DB::rollBack();
-            dd($exception);
             Log::emergency('File: ' . $exception->getFile() . 'Line: ' . $exception->getLine() . 'Message: ' . $exception->getMessage());
             return responseApiFalse(500, translate('Something went wrong'));
         }
     }
 
-    public function removeAccount(Request $request)
+    public function removeAccount(Request $request): Application|Response|ResponseFactory
     {
         $validator = validator($request->all(), [
             'password' => 'required|string|min:4|max:255',
@@ -178,7 +178,7 @@ class AuthController extends ApiController
         return responseApiFalse(500, translate('password is incorrect'));
     }
 
-    public function forgetPassword(Request $request)
+    public function forgetPassword(Request $request): Application|Response|ResponseFactory
     {
         $validator = validator($request->all(), [
             'phone' => 'required|digits:10|starts_with:05',
@@ -196,7 +196,7 @@ class AuthController extends ApiController
     }
 
 
-    public function resetPassword(Request $request)
+    public function resetPassword(Request $request): Application|Response|ResponseFactory
     {
         $validator = validator($request->all(), [
             'password' => 'required|confirmed|min:6|max:199',
@@ -212,7 +212,8 @@ class AuthController extends ApiController
         return responseApi(200, translate('Password has been restored'));
     }
 
-    public function ActiveRemoveAccount(){
+    public function ActiveRemoveAccount(): Application|Response|ResponseFactory
+    {
         $active_delete_acount= true; //$is_active?->active_delete_acount;
         if($active_delete_acount != \request('app_version') &&  \request('type')  != 'android'){
             return responseApi(200,'', false);
@@ -224,7 +225,7 @@ class AuthController extends ApiController
 
     }
 
-    protected function createNewToken($token)
+    protected function createNewToken($token): array
     {
         return [
             'access_token' => $token,

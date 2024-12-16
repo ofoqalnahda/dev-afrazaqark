@@ -29,6 +29,7 @@ Route::prefix('v1')->name('api.')->group(function () {
 
     Route::get('/get-count-with-status', [TransactionController::class,'GetCount']);
     Route::get('/get-my-transactions', [TransactionController::class,'index']);
+    Route::get('/show-transaction/{transaction_id}', [TransactionController::class,'show']);
     Route::Post('transactions/step-1', [TransactionController::class,'StepOne']);
     Route::Post('transactions/step-2', [TransactionController::class,'StepTwo']);
     Route::Post('transactions/payment-transaction', [TransactionController::class,'PaymentTransaction']);

@@ -9,6 +9,7 @@ use Illuminate\Http\Response;
 use Modules\Sort\App\Http\Resources\BankResource;
 use Modules\Sort\App\Http\Resources\TransactionCountStatusResource;
 use Modules\Sort\App\Http\Resources\TransactionListResource;
+use Modules\Sort\App\Http\Resources\TransactionResource;
 use Modules\Sort\App\Models\Bank;
 use Modules\Sort\App\Models\Transaction;
 use Modules\Sort\App\Models\TransactionPayment;
@@ -20,16 +21,25 @@ use Modules\Sort\Services\TransactionService;
 
 class TransactionController extends Controller
 {
-    protected $transactionSer;
+    protected TransactionService $transactionSer;
     public function __construct( TransactionService $transactionSer)
     {
         $this->transactionSer = $transactionSer;
         $this->middleware('auth.gard:api');
     }
 
-    public  function index(Request $request){
+    public  function index(Request $request): Application|Response|ResponseFactory{
         $transactions=Transaction::where('user_id',auth('api')->id())->filterAds($request->query())->get();
         return responseApi(200, translate('return_data_success'), TransactionListResource::collection($transactions));
+
+    }
+    public  function show($transaction_id): Application|Response|ResponseFactory{
+        $transaction=Transaction::where('user_id',auth('api')->id())->where('id',$transaction_id)->first();
+        if(!$transaction){
+            return responseApiFalse(405, translate('This transaction is not found'));
+        }
+
+        return responseApi(200, translate('return_data_success'), new TransactionResource($transaction));
 
     }
     /**
@@ -46,7 +56,8 @@ class TransactionController extends Controller
      *
      * @return Application|ResponseFactory|Response A collection of objects containing the 'status_id' and 'total' count for each status_id.
      */
-    public  function GetCount(Request $request){
+    public  function GetCount(Request $request): Application|Response|ResponseFactory
+    {
         $counts = TransactionStatus::whereNull('parent_id')
             ->withCount(['transactions' => function($query) {
                 $query->where('user_id', auth('api')->id());
@@ -55,7 +66,8 @@ class TransactionController extends Controller
 
     }
 
-    Public function StepOne(Request $request){
+    Public function StepOne(Request $request): Application|Response|ResponseFactory
+    {
 
         $validator = Validator::make($request->all(), [
             'operation_type_id' => 'required|exists:operation_types,id',
@@ -89,7 +101,8 @@ class TransactionController extends Controller
         }
     }
 
-    Public function StepTwo(Request $request){
+    Public function StepTwo(Request $request): Application|Response|ResponseFactory
+    {
         $validator = Validator::make($request->all(), [
             'transaction_id' => 'required|exists:transactions,id',
             'drawing_building' => 'required|mimes:dwg,dxf,pdf|max:10240',
@@ -141,7 +154,7 @@ class TransactionController extends Controller
     }
 
 
-    Public function PaymentTransaction(Request $request){
+    Public function PaymentTransaction(Request $request): Application|Response|ResponseFactory{
         $validator = Validator::make($request->all(), [
             'transaction_id' => 'required|exists:transactions,id',
             'transaction_payment_id' => 'required|exists:transaction_payments,id',
@@ -182,43 +195,28 @@ class TransactionController extends Controller
             return responseApiFalse(500, translate('same_error'));
         }
     }
-    Public function AcceptTransaction(Request $request){
 
+
+    public function GetDataForPayment (Request $request): Application|Response|ResponseFactory
+    {
         $validator = Validator::make($request->all(), [
             'transaction_id' => 'required|exists:transactions,id',
-            'price' => 'required|numeric',
         ]);
-
         if ($validator->fails())
             return responseApiFalse(405, $validator->errors()->first());
+
 
 
         $transaction=Transaction::where('id',$request->transaction_id)->first();
         if(!$transaction){
             return responseApiFalse(405, translate('This transaction is not found'));
         }
-
-
-        DB::beginTransaction();
-        try {
-
-            $transaction->update([
-                'sub_status_id'=>6,
-            ]);
-
-            $this->transactionSer->CreatePayment($request->price,'App',$transaction);
-
-            DB::commit();
-            return responseApi(200, translate('has been successfully created'));
-        } catch (\Exception $e) {
-            DB::rollBack();
-            return responseApiFalse(500, translate('same_error'));
+        $payment=$transaction->payments()->wherein('status',['unpaid','failed'])->first();
+        if(!$payment){
+            return responseApiFalse(405, translate('There is no invoice for this transaction. Please contact the administration. Thank you.'));
         }
-    }
-
-
-    public function GetDataForPayment (): Application|Response|\Illuminate\Contracts\Foundation\Application|ResponseFactory
-    {
+        $data['amount']=$payment->amount ;
+        $data['authority_invoice']=$transaction->getFirstMediaUrl('authority_invoice')?:'';
         \Settings::set('message_payment_'.app()->getLocale() , 'هذا التطبيق موثق من وزارة التجارة والاستثمار ووسائل الدفع به امنه ومعتمدة يرجي التاكد من التفاصيل المتعلقة بالدفع علي تطبيق افرز عقارك . يرجي التاكد من الرقم المحول الي والبنك والتاكد من رفع ايصال التحويل ');
         $data['message_payment']=\Settings::get('message_payment_'.app()->getLocale() , 'هذا التطبيق موثق من وزارة التجارة والاستثمار ووسائل الدفع به امنه ومعتمدة يرجي التاكد من التفاصيل المتعلقة بالدفع علي تطبيق افرز عقارك . يرجي التاكد من الرقم المحول الي والبنك والتاكد من رفع ايصال التحويل ');
         $data['banks']=BankResource::collection(Bank::Active()->orderBy('sort')->get());

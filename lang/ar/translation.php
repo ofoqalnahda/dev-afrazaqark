@@ -26,4 +26,6 @@
   'admin logout' => 'Admin logout',
   'admin login' => 'Admin login',
   'admin not found' => 'Admin not found',
+  'The invoice has already been added' => 'The invoice has already been added',
+  'Payment has been successfully confirmed' => 'Payment has been successfully confirmed',
 );

@@ -17,7 +17,7 @@ class Transaction extends Model implements HasMedia
 
     public function getFirstImgAttribute()
     {
-        $return=  $this->getFirstMediaUrl('images')?:'';
+        $return=  $this->getFirstMediaUrl('building_facade_image')?:'';
 
         return  $return;
     }
