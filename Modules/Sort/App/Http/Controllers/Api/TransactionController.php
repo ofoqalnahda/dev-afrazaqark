@@ -219,7 +219,6 @@ class TransactionController extends Controller
         $data['authority_invoice']=$transaction->getFirstMediaUrl('authority_invoice')?:'';
         \Settings::set('message_payment_'.app()->getLocale() , 'هذا التطبيق موثق من وزارة التجارة والاستثمار ووسائل الدفع به امنه ومعتمدة يرجي التاكد من التفاصيل المتعلقة بالدفع علي تطبيق افرز عقارك . يرجي التاكد من الرقم المحول الي والبنك والتاكد من رفع ايصال التحويل ');
         $data['message_payment']=\Settings::get('message_payment_'.app()->getLocale() , 'هذا التطبيق موثق من وزارة التجارة والاستثمار ووسائل الدفع به امنه ومعتمدة يرجي التاكد من التفاصيل المتعلقة بالدفع علي تطبيق افرز عقارك . يرجي التاكد من الرقم المحول الي والبنك والتاكد من رفع ايصال التحويل ');
-        $data['banks']=BankResource::collection(Bank::Active()->orderBy('sort')->get());
         return responseApi(200, translate('return_data_success'), $data);
 
     }
