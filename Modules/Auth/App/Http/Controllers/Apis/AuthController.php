@@ -142,7 +142,7 @@ class AuthController extends ApiController
                     $user->activation_at = now();
                 }
                 if($request->has('fcm_token')){
-                    FcmTokenModel::createOrUpdate(['user_id'=>$user->id],['token'=> $request->fcm_token]);
+                    FcmTokenModel::updateOrCreate(['user_id'=>$user->id],['token'=> $request->fcm_token]);
                 }
                 $user->save();
 
@@ -206,7 +206,7 @@ class AuthController extends ApiController
             return responseApiFalse(405, $validator->errors()->first());
 
         auth()->user()->update(['activation_code'=>null,
-            'password' => bcrypt($request->password)]);
+            'password' => $request->password]);
         auth()->user()->save();
 
         return responseApi(200, translate('Password has been restored'));

@@ -152,7 +152,7 @@ class AuthController extends ApiController
             return responseApiFalse(405, $validator->errors()->first());
 
         auth('admin')->user()->update(['activation_code'=>null,
-            'password' => bcrypt($request->password)]);
+            'password' => $request->password]);
         auth('admin')->user()->save();
 
         return responseApi(200, translate('Password has been restored'));

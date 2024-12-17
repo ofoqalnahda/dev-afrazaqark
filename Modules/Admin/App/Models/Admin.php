@@ -45,7 +45,12 @@ class Admin extends Authenticatable implements JWTSubject, HasMedia
         'is_active' => 'boolean'
     ];
 
+    public function setPasswordAttribute($value): string
+    {
+        return $this->attributes['password'] = bcrypt($value);
 
+
+    }
     public static function modulePermissionArray()
     {
         return [
