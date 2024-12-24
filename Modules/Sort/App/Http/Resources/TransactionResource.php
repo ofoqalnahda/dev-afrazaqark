@@ -3,6 +3,7 @@
 namespace Modules\Sort\App\Http\Resources;
 
 use Illuminate\Http\Resources\Json\JsonResource;
+use Modules\Sort\App\Models\PropertyType;
 use function Symfony\Component\String\b;
 
 class TransactionResource extends JsonResource
@@ -64,6 +65,8 @@ class TransactionResource extends JsonResource
                                 return $media->getUrl();
                             })->toArray(),
             'sorting_report'=>$this->getFirstMediaUrl('sorting_report')?:'',
+            'property_type'=> PropertyTypeResource::collection($this->property_type),
+            'operation_type'=> OperationTypeResource::collection($this->operation_type),
             'payments'=> TransactionPaymentResource::collection($this->payments)
 
         ];

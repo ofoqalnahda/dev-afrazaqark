@@ -26,6 +26,10 @@ class Transaction extends Model implements HasMedia
     {
         return $this->belongsTo(PropertyType::class,'property_type_id','id');
     }
+    public function operation_type()
+    {
+        return $this->belongsTo(OperationType::class,'operation_type_id','id');
+    }
     public function transaction_status()
     {
         return $this->belongsTo(TransactionStatus::class,'status_id','id');
