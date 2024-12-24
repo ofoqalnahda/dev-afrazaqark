@@ -65,8 +65,8 @@ class TransactionResource extends JsonResource
                                 return $media->getUrl();
                             })->toArray(),
             'sorting_report'=>$this->getFirstMediaUrl('sorting_report')?:'',
-            'property_type'=> PropertyTypeResource::collection($this->property_type),
-            'operation_type'=> OperationTypeResource::collection($this->operation_type),
+            'property_type'=> new PropertyTypeResource($this->property_type),
+            'operation_type'=>new OperationTypeResource($this->operation_type),
             'payments'=> TransactionPaymentResource::collection($this->payments)
 
         ];
