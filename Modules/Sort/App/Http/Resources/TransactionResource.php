@@ -43,6 +43,8 @@ class TransactionResource extends JsonResource
             'invoice_number'=>$this->invoice_number,
             'date'=>$this->created_at ? $this->created_at->diffForHumans():'',
             'status'=>$this->transaction_status?->title ,
+            'status_id'=>$this->status_id ,
+            'status_sub_id'=>$this->status_sub_id ,
             'description'=>$description ,
             'is_waiting_pay'=>$is_waiting_pay ,
             'payment_id'=>$payment_id ,
