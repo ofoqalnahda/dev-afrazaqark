@@ -24,15 +24,6 @@ if (!function_exists('responseApiFalse')) {
         ]);
     }
 }
-// ---------------- Upload File -------------------
-if (!function_exists('uploadFile')) {
-    function uploadFile($file, $path)
-    {
-        $fileName = time() . '-' . $file->getClientOriginalName();
-        $file->move($path, $fileName);
-        return $fileName;
-    }
-}
 
 // ---------------- Locales -------------------
 if (!function_exists('locales')) {
