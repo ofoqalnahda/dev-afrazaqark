@@ -52,6 +52,8 @@ class TransactionResource extends JsonResource
             'address'=>$this->address,
             'lat'=>$this->lat,
             'lng'=>$this->lng,
+            'instrument_images'=>$this->getFirstMediaUrl('instrument_images')?:'',
+            'license_image'=>$this->getFirstMediaUrl('license_image')?:'',
             'authority_invoice'=>$this->getFirstMediaUrl('authority_invoice')?:'',
             'drawing_building'=>$this->getFirstMediaUrl('drawing_building')?:'',
             'image_id'=>$this->getFirstMediaUrl('image_id')?:'',
