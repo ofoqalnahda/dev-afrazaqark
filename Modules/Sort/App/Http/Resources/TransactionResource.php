@@ -44,7 +44,7 @@ class TransactionResource extends JsonResource
             'date'=>$this->created_at ? $this->created_at->diffForHumans():'',
             'status'=>$this->transaction_status?->title ,
             'status_id'=>$this->status_id ,
-            'status_sub_id'=>$this->status_sub_id ,
+            'sub_status_id'=>$this->sub_status_id ,
             'description'=>$description ,
             'is_waiting_pay'=>$is_waiting_pay ,
             'payment_id'=>$payment_id ,
