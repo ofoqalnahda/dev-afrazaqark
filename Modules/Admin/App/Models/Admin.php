@@ -9,6 +9,7 @@ use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
+use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Traits\HasPermissions;
 use Spatie\Permission\Traits\HasRoles;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -45,12 +46,7 @@ class Admin extends Authenticatable implements JWTSubject, HasMedia
         'is_active' => 'boolean'
     ];
 
-    public function setPasswordAttribute($value): string
-    {
-        return $this->attributes['password'] = bcrypt($value);
 
-
-    }
     public static function modulePermissionArray()
     {
         return [

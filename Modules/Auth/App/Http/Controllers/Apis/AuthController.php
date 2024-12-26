@@ -79,6 +79,7 @@ class AuthController extends ApiController
         try {
             DB::beginTransaction();
             $inputs = $request->except(['password_confirmation']);
+            $inputs['password'] = bcrypt($request->password);
             $user = User::create($inputs);
             $this->authUtil->SendActivationCode($user);
             DB::commit();
@@ -206,7 +207,7 @@ class AuthController extends ApiController
             return responseApiFalse(405, $validator->errors()->first());
 
         auth()->user()->update(['activation_code'=>null,
-            'password' => $request->password]);
+            'password' => bcrypt($request->password)]);
         auth()->user()->save();
 
         return responseApi(200, translate('Password has been restored'));
@@ -224,6 +225,96 @@ class AuthController extends ApiController
 
 
     }
+    public function getProfile(): Application|Response|ResponseFactory
+    {
+        try {
+            $user = auth()->user();
+            return responseApi(200,'', new CustomerResource($user));
+        } catch (\Exception $exception) {
+            Log::emergency('File: ' . $exception->getFile() . 'Line: ' . $exception->getLine() . 'Message: ' . $exception->getMessage());
+            return responseApiFalse(500, translate('Something went wrong'));
+        }
+    }
+    public function update(Request $request): Application|Response|ResponseFactory
+    {
+        $validator = validator($request->all(), [
+            'name' => 'nullable|string|between:2,200',
+//            'phone' => 'required|digits:10|starts_with:05|unique:users,phone,'.auth()->user()->id,
+            'email' => 'nullable|email|max:20|unique:users,email,'.auth()->user()->id,
+            'image'=>'nullable|mimes:jpeg,png,jpg,gif,svg|max:2048',
+        ]);
+
+        if ($validator->fails())
+            return responseApiFalse(405, $validator->errors()->first());
+
+        try {
+            DB::beginTransaction();
+            $user = auth()->user();
+            $user->update([
+                'name' => $request->name,
+//                'phone' => $inputs['phone'],
+                'email' => $request->email,
+            ]);
+            if ($request->hasFile('image')) {
+                $user->clearMediaCollection('images');
+                $user->addMediaFromRequest('image')->toMediaCollection('images');
+            }
+            DB::commit();
+            return responseApi(200, translate('user updated'), new CustomerResource($user));
+        } catch (\Exception $exception) {
+            DB::rollBack();
+            Log::emergency('File: ' . $exception->getFile() . 'Line: ' . $exception->getLine() . 'Message: ' . $exception->getMessage());
+            return responseApiFalse(500, translate('Something went wrong'));
+        }
+    }
+    public function updateImage(Request $request): Application|Response|ResponseFactory
+    {
+        $validator = validator($request->all(), [
+            'image'=>'required|mimes:jpeg,png,jpg,gif,svg|max:2048',
+        ]);
+
+        if ($validator->fails())
+            return responseApiFalse(405, $validator->errors()->first());
+
+        try {
+            DB::beginTransaction();
+
+            $user = auth()->user();
+
+            if ($request->hasFile('image')) {
+                $user->clearMediaCollection('images');
+                $user->addMediaFromRequest('image')->toMediaCollection('images');
+            }
+            DB::commit();
+            return responseApi(200, translate('image  updated'), new CustomerResource($user));
+        } catch (\Exception $exception) {
+            DB::rollBack();
+            Log::emergency('File: ' . $exception->getFile() . 'Line: ' . $exception->getLine() . 'Message: ' . $exception->getMessage());
+            return responseApiFalse(500, translate('Something went wrong'));
+        }
+    }
+    public function changePassword(Request $request): Application|Response|ResponseFactory
+    {
+        $validator = validator($request->all(), [
+            'old_password' => 'required|min:6|max:199',
+            'new_password' => 'required|confirmed|min:6|max:199',
+        ]);
+
+        if ($validator->fails())
+            return responseApiFalse(405, $validator->errors()->first());
+       $user =  auth('api')->user();
+        if(\Hash::check($request->old_password,$user->password)){
+            $user->update([
+                'password' =>  bcrypt($request->new_password)
+            ]);
+            $user->save();
+
+            return responseApi(200, translate('Password has been changed'));
+        }
+        return responseApiFalse(405, 'Password is incorrect');
+
+    }
+
 
     protected function createNewToken($token): array
     {
