@@ -2,6 +2,7 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use Modules\Admin\App\Http\Controllers\Apis\AdminController;
 use Modules\Admin\App\Http\Controllers\Apis\AuthController;
 
 /*
@@ -29,10 +30,27 @@ Route::prefix('v1/dashboard')->group(function () {
     Route::post('check-code', [AuthController::class, 'checkCode']);
     Route::post('reset-password', [AuthController::class, 'resetPassword']);
 
+
+    #######################################
+    ##             Profile Routs         ##
+    #######################################
+    Route::get('get-profile', [AuthController::class, 'getProfile']);
+    Route::post('change-password', [AuthController::class, 'changePassword']);
+    Route::post('update-account', [AuthController::class, 'update']);
+
+
+    #######################################
+    ##             Admins Routs          ##
+    #######################################
     Route::get('get-my-permission', [AuthController::class, 'getMyPermission']);
     Route::get('get-all-permission', [AuthController::class, 'getAllPermission']);
 
-
+    Route::post('admins/check-password', [AdminController::class, 'checkPassword']);
+    Route::get('admins/index-deleted', [AdminController::class, 'IndexDeleted']);
+    Route::get('admins/restore/{id}', [AdminController::class, 'restore']);
+    Route::post('admins/update-status/{id}', [AdminController::class, 'updateStatus']);
+    Route::post('admins/{id}', [AdminController::class, 'update']);
+    Route::resource('admins', AdminController::class);
 
 
 

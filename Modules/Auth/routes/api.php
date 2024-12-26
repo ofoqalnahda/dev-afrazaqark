@@ -34,6 +34,13 @@ Route::prefix('v1')->name('api.')->group(function () {
     Route::get('active-remove-account', [AuthController::class, 'ActiveRemoveAccount']);
 
 
+    Route::get('get-profile', [AuthController::class, 'getProfile']);
+    Route::post('change-password', [AuthController::class, 'changePassword']);
+    Route::post('update-account', [AuthController::class, 'update']);
+    Route::post('update-image', [AuthController::class, 'updateImage']);
+
+
+
 
 
 });

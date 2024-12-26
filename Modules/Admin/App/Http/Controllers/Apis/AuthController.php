@@ -6,13 +6,16 @@ namespace Modules\Admin\App\Http\Controllers\Apis; ;
 
 use App\Http\Controllers\ApiController;
 use File;
+use Illuminate\Contracts\Routing\ResponseFactory;
+use Illuminate\Foundation\Application;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Modules\Admin\App\Models\Admin;
 use Modules\Auth\Util\AuthUtil;
-use Modules\Customer\App\resources\CustomerResource;
+use Modules\Admin\App\Http\resources\AdminResource;
 use Illuminate\Support\Facades\Config;
 
 class AuthController extends ApiController
@@ -52,14 +55,13 @@ class AuthController extends ApiController
         }
 
         $token = auth('admin')
-            ->attempt(['phone' => $request->phone,
-                'password' => $request->password ]);
+            ->attempt([
+                'phone' => $request->phone,
+                'password' => $request->password,
+            ]);
         if(!$token) {
             return responseApiFalse(202, translate('The login credentials you entered are incorrect. Please try again or reset your password if needed.'));
         }
-        $admin=auth('admin')
-            ->user();
-
         return responseApi(200, translate('return success'), $this->createNewToken($token));
     }
 
@@ -120,7 +122,6 @@ class AuthController extends ApiController
             return responseApiFalse(500, translate('activation code is incorrect'));
         } catch (\Exception $exception) {
             DB::rollBack();
-            dd($exception);
             Log::emergency('File: ' . $exception->getFile() . 'Line: ' . $exception->getLine() . 'Message: ' . $exception->getMessage());
             return responseApiFalse(500, translate('Something went wrong'));
         }
@@ -152,7 +153,7 @@ class AuthController extends ApiController
             return responseApiFalse(405, $validator->errors()->first());
 
         auth('admin')->user()->update(['activation_code'=>null,
-            'password' => $request->password]);
+            'password' =>bcrypt( $request->password)]);
         auth('admin')->user()->save();
 
         return responseApi(200, translate('Password has been restored'));
@@ -164,13 +165,13 @@ class AuthController extends ApiController
             'access_token' => $token,
             'token_type' => 'bearer',
             'expires_in' => null,//auth('admin')->factory()->getTTL() * 60,
-            'admin' => new CustomerResource(auth('admin')->user())
+            'admin' => new AdminResource(auth('admin')->user())
         ];
     }
     public function getAllPermission()
     {
-       $data['permissions']= Admin::subModulePermissionArray();
-       $data['special']= Admin::specialModulePermissionArray();
+        $data['permissions']= Admin::subModulePermissionArray();
+        $data['special']= Admin::specialModulePermissionArray();
         return responseApi(200, '', $data);
     }
     public function getMyPermission()
@@ -178,5 +179,73 @@ class AuthController extends ApiController
         $data = auth('admin')->user()->getAllPermissions()->select('id','name');
         return responseApi(200, '', $data);
     }
+
+
+    public function getProfile(): Application|Response|ResponseFactory
+    {
+        try {
+            $admin = auth('admin')->user();
+            return responseApi(200,'', new AdminResource($admin));
+        } catch (\Exception $exception) {
+            Log::emergency('File: ' . $exception->getFile() . 'Line: ' . $exception->getLine() . 'Message: ' . $exception->getMessage());
+            return responseApiFalse(500, translate('Something went wrong'));
+        }
+    }
+    public function update(Request $request): Application|Response|ResponseFactory
+    {
+        $validator = validator($request->all(), [
+            'name' => 'nullable|string|between:2,200',
+//            'phone' => 'required|digits:10|starts_with:05|unique:admins,phone,'.auth('admin')->user()->id,
+            'email' => 'nullable|email|max:20|unique:admins,email,'.auth('admin')->user()->id,
+            'image'=>'nullable|mimes:jpeg,png,jpg,gif,svg|max:2048',
+        ]);
+
+        if ($validator->fails())
+            return responseApiFalse(405, $validator->errors()->first());
+
+        try {
+            DB::beginTransaction();
+            $admin = auth('admin')->user();
+            $admin->update([
+                'name' => $request->name,
+//                'phone' => $inputs['phone'],
+                'email' => $request->email,
+            ]);
+            if ($request->hasFile('image')) {
+                $admin->clearMediaCollection('images');
+                $admin->addMediaFromRequest('image')->toMediaCollection('images');
+            }
+            DB::commit();
+            return responseApi(200, translate('admin updated'), new AdminResource($admin));
+        } catch (\Exception $exception) {
+
+            DB::rollBack();
+            Log::emergency('File: ' . $exception->getFile() . 'Line: ' . $exception->getLine() . 'Message: ' . $exception->getMessage());
+            return responseApiFalse(500, translate('Something went wrong'));
+        }
+    }
+    public function changePassword(Request $request): Application|Response|ResponseFactory
+    {
+        $validator = validator($request->all(), [
+            'old_password' => 'required|min:6|max:199',
+            'new_password' => 'required|confirmed|min:6|max:199',
+        ]);
+
+        if ($validator->fails())
+            return responseApiFalse(405, $validator->errors()->first());
+        $admin =  auth('api')->user();
+        if(\Hash::check($request->old_password,$admin->password)){
+            $admin->update([
+                'password' =>  bcrypt($request->new_password)
+            ]);
+            $admin->save();
+
+            return responseApi(200, translate('Password has been changed'));
+        }
+        return responseApiFalse(405, 'Password is incorrect');
+
+    }
+
+
 }
 

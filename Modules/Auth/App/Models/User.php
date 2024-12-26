@@ -26,12 +26,7 @@ class User extends Authenticatable implements JWTSubject, HasMedia
         'email_verified_at' => 'datetime',
     ];
 
-    public function setPasswordAttribute($value): string
-    {
-        return $this->attributes['password'] = bcrypt($value);
 
-
-    }
 
 
     public function ScopeActive($query)
