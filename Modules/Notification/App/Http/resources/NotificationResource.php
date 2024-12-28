@@ -3,6 +3,7 @@
 namespace Modules\Notification\App\Http\resources;
 
 use Illuminate\Http\Resources\Json\JsonResource;
+use Modules\Sort\App\Http\Resources\TransactionListResource;
 use Modules\Sort\App\Http\Resources\TransactionResource;
 
 class NotificationResource extends JsonResource
@@ -19,7 +20,7 @@ class NotificationResource extends JsonResource
             'title'=>$this->title,
             'body'=>$this->body,
             'image'=>$this->image,
-            'type_data'=>new TransactionResource($this->type_data),
+            'type_data'=>new TransactionListResource($this->type_data),
             'created_at'=>$this->created_at ? $this->created_at->diffForHumans():'',
         ];
     }
