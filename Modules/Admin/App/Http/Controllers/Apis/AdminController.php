@@ -11,7 +11,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
-use Modules\Admin\App\Http\resources\AdminResource;
+use Modules\Admin\App\Http\resources\NotificationResource;
 use Modules\Admin\App\Http\resources\AdminWithPermissionsResource;
 use Modules\Admin\App\Models\Admin;
 use Modules\Admin\Services\AdminService;
@@ -37,7 +37,7 @@ class AdminController extends Controller
     public function index(Request $request): Application|Response|\Illuminate\Contracts\Foundation\Application|ResponseFactory
     {
        $admins= $this->adminService->index($request);
-        return responseApi(200, translate('return success'),AdminResource::collection($admins));
+        return responseApi(200, translate('return success'),NotificationResource::collection($admins));
 
     }
     /**
@@ -48,7 +48,7 @@ class AdminController extends Controller
     public function IndexDeleted(Request $request): Application|Response|\Illuminate\Contracts\Foundation\Application|ResponseFactory
     {
        $admins= $this->adminService->IndexDeleted($request);
-        return responseApi(200, translate('return success'),AdminResource::collection($admins));
+        return responseApi(200, translate('return success'),NotificationResource::collection($admins));
 
     }
 
@@ -83,7 +83,7 @@ class AdminController extends Controller
                 $admin = $this->adminService->create($data,$request->image);
                 $admin->permissions()->sync($request->get('permission_id'));
             DB::commit();
-            return responseApi(200, translate('create Admin success'),new AdminResource($admin));
+            return responseApi(200, translate('create Admin success'),new NotificationResource($admin));
         }catch (\Exception $exception){
             DB::rollBack();
             \Illuminate\Support\Facades\Log::emergency('File: ' . $exception->getFile() . 'Line: ' . $exception->getLine() . 'Message: ' . $exception->getMessage());

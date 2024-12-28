@@ -2,6 +2,7 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use Modules\Notification\App\Http\Controllers\Api\NotificationController;
 
 /*
     |--------------------------------------------------------------------------
@@ -14,6 +15,8 @@ use Illuminate\Support\Facades\Route;
     |
 */
 
-Route::middleware(['auth:sanctum'])->prefix('v1')->name('api.')->group(function () {
-    Route::get('notification', fn (Request $request) => $request->user())->name('notification');
+Route::prefix('v1/notifications')->name('api.')->group(function () {
+    Route::get('/', [NotificationController::class,'index']);
+    Route::get('/count', [NotificationController::class,'count']);
+
 });

@@ -1,7 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use Modules\Info\App\Http\Controllers\InfoController;
+use Modules\Info\App\Http\Controllers\Api\InfoController;
 
 /*
 |--------------------------------------------------------------------------

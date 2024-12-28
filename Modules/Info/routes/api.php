@@ -1,7 +1,7 @@
 <?php
 
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use Modules\Info\App\Http\Controllers\Api\InfoController;
 
 /*
     |--------------------------------------------------------------------------
@@ -14,6 +14,8 @@ use Illuminate\Support\Facades\Route;
     |
 */
 
-Route::middleware(['auth:sanctum'])->prefix('v1')->name('api.')->group(function () {
-    Route::get('info', fn (Request $request) => $request->user())->name('info');
+Route::prefix('v1/info')->name('api.')->group(function () {
+    Route::get('/fqa', [InfoController::class,'FQA']);
+    Route::get('/{slug}', [InfoController::class,'Show']);
+
 });
