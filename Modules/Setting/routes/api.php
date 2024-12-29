@@ -20,8 +20,6 @@ use Modules\Setting\App\Http\Controllers\Api\SettingController;
 */
 
 Route::prefix('v1')->name('api.')->group(function () {
-
-
     #########################################################
     #                         areas                         #
     #########################################################
