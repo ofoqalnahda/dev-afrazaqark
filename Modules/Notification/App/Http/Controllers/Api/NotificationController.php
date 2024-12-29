@@ -27,7 +27,7 @@ class NotificationController extends Controller
         Notification::whereIn('id',$notifications->pluck('id')->toArray())
             ->Unread()
             ->update(['read'=>true]);
-        return responseApi('200','',NotificationResource::collection($notifications));
+        return responseApi(200,'',NotificationResource::collection($notifications));
     }
 
     public function count()

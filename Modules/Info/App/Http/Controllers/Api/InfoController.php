@@ -18,7 +18,7 @@ class InfoController extends Controller
         $faqs= Faq::when(\request()->search , function ($q){
             $q->WhereTranslationLike('title',  '%'.\request()->search.'%')->orWhereTranslationLike('description', '%'.\request()->search.'%');
         })->get();
-        return responseApi('200','',FaqResource::collection($faqs));
+        return responseApi(200,'',FaqResource::collection($faqs));
     }
 
     public function Show(String $slug): Application|Response|\Illuminate\Contracts\Foundation\Application|ResponseFactory
@@ -29,6 +29,6 @@ class InfoController extends Controller
             return responseApiFalse(405,translate('page not found') );
 
 
-        return responseApi('200','',new InfoResource($info));
+        return responseApi(200,'',new InfoResource($info));
     }
 }

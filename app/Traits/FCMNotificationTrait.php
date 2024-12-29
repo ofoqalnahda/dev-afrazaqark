@@ -10,6 +10,7 @@ trait FCMNotificationTrait
     protected function sendFCMNotification(string $token, string $title, string $body, array $data = null): array
     {
         $messaging = (new Factory)
+//            firebase_credentials
             ->withServiceAccount(config('firebase.credentials'))
             ->createMessaging();
 
