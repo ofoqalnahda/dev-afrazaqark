@@ -40,4 +40,12 @@
   'restore success' => 'Restore success',
   'can\'t delete your own admin' => 'Can t delete your own admin',
   'update Admin success' => 'Update Admin success',
+  'Area not found' => 'Area not found',
+  'update Area success' => 'Update Area success',
+  'city not found' => 'City not found',
+  'update City success' => 'Update City success',
+  'update Slider success' => 'Update Slider success',
+  'icon not found' => 'Icon not found',
+  'update Icon success' => 'Update Icon success',
+  'update Offer success' => 'Update Offer success',
 );

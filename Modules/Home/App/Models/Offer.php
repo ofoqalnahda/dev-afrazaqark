@@ -19,13 +19,7 @@ class Offer extends Model implements  HasMedia
 
     public function scopeActive($query)
     {
-        $now = date('Y-m-d');
-        return $query->where('status',  1)->where(function ($q) use ($now){
-            $q->where(function ($q2) use ($now){
-                $q2->whereDate('start_at','<=',$now )
-                    ->whereDate('end_at','>',$now );
-            })->orwhereNull('end_at');
-        });
+        return $query->where('status',  1);
 
     }
     public function getImageUrlAttribute(): ?string

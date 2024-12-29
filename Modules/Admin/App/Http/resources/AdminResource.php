@@ -18,8 +18,8 @@ class AdminResource extends JsonResource
             'email'=>$this->email,
             'status'=>(boolean)$this->is_active,
             'image'=>$this->getFirstMedia('images') != null ? $this->getFirstMedia('images')->getUrl() : null,
-            'created_at'=>$this->created_at ? $this->created_at->diffForHumans():'',
-            'updated_at'=>$this->updated_at ? $this->updated_at->diffForHumans():'',
+            'created_at'=>$this->created_at?->format('d-m-Y h:i A'),
+            'updated_at'=>$this->updated_at?->format('d-m-Y h:i A'),
         ];
     }
 }

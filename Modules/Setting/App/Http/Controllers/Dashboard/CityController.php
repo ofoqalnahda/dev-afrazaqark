@@ -1,9 +1,13 @@
 <?php
 
-namespace Modules\Setting\App\Http\Controllers\Api;
+namespace Modules\Setting\App\Http\Controllers\Dashboard;
 
 use App\Http\Controllers\Controller;
-use Modules\Setting\App\Http\resources\Api\CityResource;
+use Illuminate\Contracts\Routing\ResponseFactory;
+use Illuminate\Foundation\Application;
+use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Log;
+use Modules\Setting\App\Http\resources\Dashboard\CityResource;
 use Modules\Setting\App\Models\City;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -14,20 +18,28 @@ class CityController extends Controller
     protected $count_paginate = 10;
 
     public  function index(Request $request){
-        $cities=City::Active();
-        if($request->has('area_id')){
-            $cities=$cities->where('area_id',$request->area_id);
-        }
-        $cities= $cities->get();
-        return responseApi(200, translate('return_data_success'), CityResource::collection($cities));
+        $count_paginate=$request->count_paginate?:$this->count_paginate;
+        $cities=City::when($request->search , function ($q) use ($request){
+            $q->whereTranslationLike('title','%'. $request->search .'%');
+        })->when($request->area_id , function ($q) use ($request)   {
+            $q->where('area_id',$request->area_id);
+        })->with('translations')->paginate($count_paginate);
+        $data=[
+            'cities'=>CityResource::collection($cities),
+            'count'=>$cities->count(),
+            'current_page'=>$cities->currentPage(),
+            'last_page'=>$cities->lastPage(),
+        ];
+
+        return responseApi(200, translate('return_data_success'),$data );
 
     }
     public function store(Request $request)
     {
 
         $validator = Validator::make($request->all(), [
-            'area_id' => 'required|exists:areas,id',
             'ar' => 'required|array',
+            'area_id' => 'required|exists:areas,id',
             'ar.title' => 'required|string',
         ]);
 
@@ -51,10 +63,15 @@ class CityController extends Controller
     }
 
 
-
+    public  function show ($id ){
+        $city = City::whereId($id)->with('translations')->first();
+        if(!$city){
+            return responseApiFalse(500, translate('city not found'));
+        }
+        return responseApi(200, translate('return_data_success'), new  CityResource($city));
+    }
     public  function update ($id,Request $request){
         $validator = Validator::make($request->all(), [
-            'area_id' => 'required|exists:areas,id',
             'ar' => 'required|array',
             'ar.title' => 'required|string',
         ]);
@@ -65,7 +82,7 @@ class CityController extends Controller
         try {
             DB::beginTransaction();
 
-            $city = City::find($id);
+            $city = City::whereId($id)->first();
             $data = $request->all();
 
            if(!$city){
@@ -84,17 +101,37 @@ class CityController extends Controller
         }
     }
 
+    /**
+     * Update status.
+     * @param $id
+     * @return Application|Response|\Illuminate\Contracts\Foundation\Application|ResponseFactory
+     */
+    public function updateStatus( $id): Application|Response|\Illuminate\Contracts\Foundation\Application|ResponseFactory
+    {
+        $city=  City::where('id', $id)->first();
+        if(!$city){
+            return responseApiFalse(404, translate('City not found'));
+        }
 
+        try {
+            DB::beginTransaction();
+            $city->status = ($city->status - 1) * -1;
+            $city->save();
+            DB::commit();
+            return responseApi(200, translate('update City success'));
+        }catch (\Exception $exception){
+            DB::rollBack();
+            Log::emergency('File: ' . $exception->getFile() . 'Line: ' . $exception->getLine() . 'Message: ' . $exception->getMessage());
+            return responseApiFalse(500, translate('Something went wrong'));
+        }
+    }
     public function destroy($id)
     {
 
-        $city = City::find($id);
+        $city = City::whereId($id)->first();
         if(!$city){
-            return responseApiFalse(500, __('site.city not found'));
+            return responseApiFalse(500, translate('city not found'));
         }
-        $city->clearMediaCollection('images');
-
-
         $city->delete();
         return responseApi(200);
 

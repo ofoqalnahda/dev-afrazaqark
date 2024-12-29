@@ -7,24 +7,24 @@ use Illuminate\Contracts\Routing\ResponseFactory;
 use Illuminate\Foundation\Application;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Log;
-use Modules\Setting\App\Http\resources\Dashboard\IconResource;
+use Modules\Home\App\Models\Offer;
+use Modules\Setting\App\Http\resources\Dashboard\OfferResource;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
-use Modules\Setting\App\Models\Icon;
 
-class IconController extends Controller
+class OfferController extends Controller
 {
     protected $count_paginate = 10;
 
     public  function index(Request $request){
         $count_paginate=$request->count_paginate?:$this->count_paginate;
-        $icons=Icon::paginate($count_paginate);
+        $offers=Offer::paginate($count_paginate);
         $data=[
-            'icons'=>IconResource::collection($icons),
-            'count'=>$icons->count(),
-            'current_page'=>$icons->currentPage(),
-            'last_page'=>$icons->lastPage(),
+            'offers'=>OfferResource::collection($offers),
+            'count'=>$offers->count(),
+            'current_page'=>$offers->currentPage(),
+            'last_page'=>$offers->lastPage(),
         ];
 
         return responseApi(200, translate('return_data_success'),$data );
@@ -35,8 +35,8 @@ class IconController extends Controller
 
         $validator = Validator::make($request->all(), [
             'title' => 'required|string|max:100',
-            'link' => 'required|url',
             'status' => 'required|in:1,0',
+            'sort' => 'required|numeric|min:0',
             'image' => 'required|mimes:jpeg,png,jpg,gif,svg|max:2048',
         ]);
 
@@ -47,17 +47,17 @@ class IconController extends Controller
         DB::beginTransaction();
         try {
             $data = [
-                 "title" => $request->title,
-                  "link" => $request->link,
+                 "name" => $request->title,
+                  "sort" => $request->sort,
                   "status" => $request->status
             ];
 
-            $icon = Icon::create($data);
+            $offer = Offer::create($data);
 
-            $icon->addMediaFromRequest('image')->toMediaCollection('images');
+            $offer->addMediaFromRequest('image')->toMediaCollection('images');
 
             DB::commit();
-            return responseApi(200, translate('return_data_success'), new  IconResource($icon));
+            return responseApi(200, translate('return_data_success'), new  OfferResource($offer));
 
         } catch (\Exception $e) {
             DB::rollBack();
@@ -67,17 +67,17 @@ class IconController extends Controller
 
 
     public  function show ($id ){
-        $icon = Icon::whereId($id)->first();
-        if(!$icon){
-            return responseApiFalse(500, translate('icon not found'));
+        $offer = Offer::whereId($id)->first();
+        if(!$offer){
+            return responseApiFalse(500, translate('offer not found'));
         }
-        return responseApi(200, translate('return_data_success'), new  IconResource($icon));
+        return responseApi(200, translate('return_data_success'), new  OfferResource($offer));
     }
     public  function update ($id,Request $request){
         $validator = Validator::make($request->all(), [
             'title' => 'required|string|max:100',
-            'link' => 'required|url',
             'status' => 'required|in:1,0',
+            'sort' => 'required|numeric|min:0',
             'image' => 'nullable|mimes:jpeg,png,jpg,gif,svg|max:2048',
         ]);
 
@@ -85,9 +85,9 @@ class IconController extends Controller
             return responseApiFalse(405, $validator->errors()->first());
 
 
-        $icon = Icon::find($id);
-        if(!$icon){
-            return responseApiFalse(500, translate('icon not found'));
+        $offer = Offer::find($id);
+        if(!$offer){
+            return responseApiFalse(500, translate('offer not found'));
         }
 
         DB::beginTransaction();
@@ -95,19 +95,19 @@ class IconController extends Controller
 
 
             $data = [
-                "title" => $request->title,
-                "link" => $request->link,
+                "name" => $request->title,
+                "sort" => $request->sort,
                 "status" => $request->status
             ];
-            $icon->update($data);
+            $offer->update($data);
 
             if ($request->hasFile('image')) {
-                $icon->clearMediaCollection('images');
-                $icon->addMediaFromRequest('image')->toMediaCollection('images');
+                $offer->clearMediaCollection('images');
+                $offer->addMediaFromRequest('image')->toMediaCollection('images');
             }
 
             DB::commit();
-            return responseApi(200, translate('return_data_success'), new IconResource($icon));
+            return responseApi(200, translate('return_data_success'), new OfferResource($offer));
 
         }catch (\Exception $e){
             DB::rollback();
@@ -122,17 +122,17 @@ class IconController extends Controller
      */
     public function updateStatus( $id): Application|Response|\Illuminate\Contracts\Foundation\Application|ResponseFactory
     {
-        $icon=  Icon::where('id', $id)->first();
-        if(!$icon){
-            return responseApiFalse(404, translate('Icon not found'));
+        $offer=  Offer::where('id', $id)->first();
+        if(!$offer){
+            return responseApiFalse(404, translate('Offer not found'));
         }
 
         try {
             DB::beginTransaction();
-                $icon->status = ($icon->status - 1) * -1;
-                $icon->save();
+                $offer->status = ($offer->status - 1) * -1;
+                $offer->save();
             DB::commit();
-            return responseApi(200, translate('update Icon success'));
+            return responseApi(200, translate('update Offer success'));
         }catch (\Exception $exception){
             DB::rollBack();
             Log::emergency('File: ' . $exception->getFile() . 'Line: ' . $exception->getLine() . 'Message: ' . $exception->getMessage());
@@ -142,12 +142,12 @@ class IconController extends Controller
     public function destroy($id)
     {
 
-        $icon = Icon::find($id);
-        if(!$icon){
-            return responseApiFalse(500, translate('icon not found'));
+        $offer = Offer::find($id);
+        if(!$offer){
+            return responseApiFalse(500, translate('offer not found'));
         }
-        $icon->clearMediaCollection('images');
-        $icon->delete();
+        $offer->clearMediaCollection('images');
+        $offer->delete();
         return responseApi(200);
 
     }

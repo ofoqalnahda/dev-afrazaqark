@@ -18,4 +18,7 @@ class City extends Model implements TranslatableContract , HasMedia
     {
         return $query->where('status',  1);
     }
+    public function area(){
+        return $this->belongsTo(Area::class);
+    }
 }

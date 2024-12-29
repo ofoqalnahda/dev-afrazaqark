@@ -3,7 +3,11 @@
 namespace Modules\Setting\App\Http\Controllers\Dashboard;
 
 use App\Http\Controllers\Controller;
-use Modules\Setting\App\Http\resources\Api\AreaResource;
+use Illuminate\Contracts\Routing\ResponseFactory;
+use Illuminate\Foundation\Application;
+use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Log;
+use Modules\Setting\App\Http\resources\Dashboard\AreaResource;
 use Modules\Setting\App\Models\Area;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -15,9 +19,12 @@ class AreaController extends Controller
 
     public  function index(Request $request){
         $count_paginate=$request->count_paginate?:$this->count_paginate;
-        $areas=Area::query()->simplePaginate($count_paginate);
+        $areas=Area::when($request->search , function ($q) use ($request){
+            $q->whereTranslationLike('title','%'. $request->search .'%');
+        })->with('translations')->paginate($count_paginate);
         $data=[
             'areas'=>AreaResource::collection($areas),
+            'count'=>$areas->count(),
             'current_page'=>$areas->currentPage(),
             'last_page'=>$areas->lastPage(),
         ];
@@ -53,7 +60,13 @@ class AreaController extends Controller
     }
 
 
-
+    public  function show ($id ){
+        $area = Area::whereId($id)->with('translations')->first();
+        if(!$area){
+            return responseApiFalse(500, translate('area not found'));
+        }
+        return responseApi(200, translate('return_data_success'), new  AreaResource($area));
+    }
     public  function update ($id,Request $request){
         $validator = Validator::make($request->all(), [
             'ar' => 'required|array',
@@ -66,7 +79,7 @@ class AreaController extends Controller
         try {
             DB::beginTransaction();
 
-            $area = Area::find($id);
+            $area = Area::whereId($id)->first();
             $data = $request->all();
 
            if(!$area){
@@ -85,17 +98,37 @@ class AreaController extends Controller
         }
     }
 
+    /**
+     * Update status.
+     * @param $id
+     * @return Application|Response|\Illuminate\Contracts\Foundation\Application|ResponseFactory
+     */
+    public function updateStatus( $id): Application|Response|\Illuminate\Contracts\Foundation\Application|ResponseFactory
+    {
+        $area=  Area::where('id', $id)->first();
+        if(!$area){
+            return responseApiFalse(404, translate('Area not found'));
+        }
 
+        try {
+            DB::beginTransaction();
+            $area->status = ($area->status - 1) * -1;
+            $area->save();
+            DB::commit();
+            return responseApi(200, translate('update Area success'));
+        }catch (\Exception $exception){
+            DB::rollBack();
+            Log::emergency('File: ' . $exception->getFile() . 'Line: ' . $exception->getLine() . 'Message: ' . $exception->getMessage());
+            return responseApiFalse(500, translate('Something went wrong'));
+        }
+    }
     public function destroy($id)
     {
 
-        $area = Area::find($id);
+        $area = Area::whereId($id)->first();
         if(!$area){
-            return responseApiFalse(500, __('site.area not found'));
+            return responseApiFalse(500, translate('area not found'));
         }
-        $area->clearMediaCollection('images');
-
-
         $area->delete();
         return responseApi(200);
 
