@@ -48,4 +48,7 @@
   'icon not found' => 'Icon not found',
   'update Icon success' => 'Update Icon success',
   'update Offer success' => 'Update Offer success',
+  'create Customer success' => 'Create Customer success',
+  'Customer not found' => 'Customer not found',
+  'update Customer success' => 'Update Customer success',
 );

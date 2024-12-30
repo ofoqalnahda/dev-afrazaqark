@@ -6,6 +6,7 @@ use Modules\Setting\App\Http\Controllers\Dashboard\AreaController;
 use Modules\Setting\App\Http\Controllers\Dashboard\CityController;
 use Modules\Setting\App\Http\Controllers\Dashboard\IconController;
 use Modules\Setting\App\Http\Controllers\Dashboard\OfferController;
+use Modules\Setting\App\Http\Controllers\Dashboard\SettingController;
 use Modules\Setting\App\Http\Controllers\Dashboard\SliderController;
 
 /*
@@ -60,5 +61,11 @@ Route::prefix('v1/dashboard')->name('api.')->group(function () {
     Route::post('/offers/update-status/{id}', [OfferController::class,'updateStatus']);
     Route::post('/offers/{id}', [OfferController::class,'update']);
     Route::resource('/offers', OfferController::class);
+
+    #########################################################
+    #                         settings                         #
+    #########################################################
+    Route::get('/get-settings', [SettingController::class,'index']);
+    Route::post('/update-settings', [SettingController::class,'update']);
 
 });

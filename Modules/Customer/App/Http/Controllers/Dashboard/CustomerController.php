@@ -1,6 +1,6 @@
 <?php
 
-namespace Modules\Admin\App\Http\Controllers\Apis;
+namespace Modules\Customer\App\Http\Controllers\Dashboard;
 
 use App\Http\Controllers\Controller;
 use GPBMetadata\Google\Api\Log;
@@ -11,44 +11,44 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
-use Modules\Admin\App\Http\resources\AdminResource;
-use Modules\Admin\App\Http\resources\AdminWithPermissionsResource;
 use Modules\Admin\App\Models\Admin;
-use Modules\Admin\Services\AdminService;
+use Modules\Auth\App\Models\User;
+use Modules\Customer\App\resources\Dashboard\CustomerResource;
+use Modules\Customer\Services\CustomerService;
 use function GuzzleHttp\Promise\all;
 
-class AdminController extends Controller
+class CustomerController extends Controller
 {
-    protected AdminService $adminService;
+    protected CustomerService $customerService;
 
-    public function __construct(AdminService $adminService)
+    public function __construct(CustomerService $customerService)
     {
-        $this->adminService = $adminService;
+        $this->customerService = $customerService;
         Config::set( 'jwt.user', 'App\Models\Provider' );
         Config::set( 'auth.providers.users.model', Admin::class );
         $this->middleware('auth.gard:admin');
     }
 
     /**
-     * Show admins.
+     * Show customers.
      * @param Request $request
      * @return Application|Response|\Illuminate\Contracts\Foundation\Application|ResponseFactory
      */
     public function index(Request $request): Application|Response|\Illuminate\Contracts\Foundation\Application|ResponseFactory
     {
-       $admins= $this->adminService->index($request);
-        return responseApi(200, translate('return success'),AdminResource::collection($admins));
+       $customers= $this->customerService->index($request);
+        return responseApi(200, translate('return success'),CustomerResource::collection($customers));
 
     }
     /**
-     * Show deleted admins.
+     * Show deleted customers.
      * @param Request $request
      * @return Application|Response|\Illuminate\Contracts\Foundation\Application|ResponseFactory
      */
     public function IndexDeleted(Request $request): Application|Response|\Illuminate\Contracts\Foundation\Application|ResponseFactory
     {
-       $admins= $this->adminService->IndexDeleted($request);
-        return responseApi(200, translate('return success'),AdminResource::collection($admins));
+       $customers= $this->customerService->IndexDeleted($request);
+        return responseApi(200, translate('return success'),CustomerResource::collection($customers));
 
     }
 
@@ -60,12 +60,11 @@ class AdminController extends Controller
     public function store(Request $request): Application|Response|\Illuminate\Contracts\Foundation\Application|ResponseFactory
     {
         $validator = validator($request->all(), [
-            'phone' => 'required|digits:10|starts_with:05|unique:admins',
-            'email' => 'nullable|email|unique:admins',
-            'image' => 'nullable|image',
+            'name' => 'required|string|max:150',
+            'phone' => 'required|digits:10|starts_with:05|unique:users,phone',
+            'email' => 'nullable|email|unique:users,email',
+            'image' => 'nullable|mimes:jpeg,png,jpg,gif,svg|max:2048',
             'password' => 'required|min:6|confirmed',
-            'permission_id' => 'required|array|min:1',
-            'permission_id.*' => 'required|exists:permissions,id',
         ]);
 
         if ($validator->fails())
@@ -73,17 +72,18 @@ class AdminController extends Controller
 
         $data = [
             'name' => $request->get('name'),
-            'is_active' => true,
+            'status' => $request->is_active,
             'phone' => $request->get('phone'),
             'email' => $request->get('email'),
             'password' => bcrypt($request->get('password')),
+            'activation_at' => now(),
         ];
         try {
             DB::beginTransaction();
-                $admin = $this->adminService->create($data,$request->image);
-                $admin->permissions()->sync($request->get('permission_id'));
+                $customer = $this->customerService->create($data,$request->image);
+
             DB::commit();
-            return responseApi(200, translate('create Admin success'),new AdminResource($admin));
+            return responseApi(200, translate('create Customer success'),new CustomerResource($customer));
         }catch (\Exception $exception){
             DB::rollBack();
             \Illuminate\Support\Facades\Log::emergency('File: ' . $exception->getFile() . 'Line: ' . $exception->getLine() . 'Message: ' . $exception->getMessage());
@@ -98,11 +98,11 @@ class AdminController extends Controller
      */
     public function show($id): Application|Response|\Illuminate\Contracts\Foundation\Application|ResponseFactory
     {
-        $admin=  Admin::where('id', $id)->first();
-        if(!$admin){
-            return responseApiFalse(404, translate('Admin not found'));
+        $customer=  User::where('id', $id)->first();
+        if(!$customer){
+            return responseApiFalse(404, translate('Customer not found'));
         }
-        return responseApi(200, translate('create Admin success'),new AdminWithPermissionsResource($admin));
+        return responseApi(200, translate('create Customer success'),new CustomerResource($customer));
     }
 
 
@@ -114,18 +114,17 @@ class AdminController extends Controller
      */
     public function update( $id,Request $request): Application|Response|\Illuminate\Contracts\Foundation\Application|ResponseFactory
     {
-        $admin=  Admin::where('id', $id)->first();
-        if(!$admin){
-            return responseApiFalse(404, translate('Admin not found'));
+        $customer=  User::where('id', $id)->first();
+        if(!$customer){
+            return responseApiFalse(404, translate('Customer not found'));
         }
         $validator = validator($request->all(), [
-            'phone' => 'required|digits:10|starts_with:05|unique:admins,phone,'.$admin->id,
-            'email' => 'nullable|email|unique:admins,email,'.$admin->id,
-            'image' => 'nullable|mimes:jpeg,jpg,png,gif',
+            'name' => 'required|string|max:150',
+            'phone' => 'required|digits:10|starts_with:05|unique:users,phone,'.$customer->id,
+            'email' => 'nullable|email|unique:users,email,'.$customer->id,
             'is_active' => 'required|in:0,1',
             'password' => 'nullable|min:6|confirmed',
-            'permission_id' => 'required|array|min:1',
-            'permission_id.*' => 'required|exists:permissions,id',
+            'image' => 'nullable|mimes:jpeg,png,jpg,gif,svg|max:2048',
         ]);
 
         if ($validator->fails())
@@ -134,10 +133,10 @@ class AdminController extends Controller
 
         try {
             DB::beginTransaction();
-            $admin = $this->adminService->update($request,$admin);
-            $admin->permissions()->sync($request->get('permission_id'));
+            $customer = $this->customerService->update($request,$customer);
+
             DB::commit();
-            return responseApi(200, translate('update Admin success'),new AdminWithPermissionsResource($admin));
+            return responseApi(200, translate('update Customer success'),new CustomerResource($customer));
         }catch (\Exception $exception){
             DB::rollBack();
             \Illuminate\Support\Facades\Log::emergency('File: ' . $exception->getFile() . 'Line: ' . $exception->getLine() . 'Message: ' . $exception->getMessage());
@@ -151,16 +150,16 @@ class AdminController extends Controller
      */
     public function updateStatus( $id): Application|Response|\Illuminate\Contracts\Foundation\Application|ResponseFactory
     {
-        $admin=  Admin::where('id', $id)->first();
-        if(!$admin){
-            return responseApiFalse(404, translate('Admin not found'));
+        $customer=  User::where('id', $id)->first();
+        if(!$customer){
+            return responseApiFalse(404, translate('Customer not found'));
         }
 
         try {
             DB::beginTransaction();
-             $this->adminService->updateStatus($admin);
+             $this->customerService->updateStatus($customer);
             DB::commit();
-            return responseApi(200, translate('update Admin success'));
+            return responseApi(200, translate('update Customer success'));
         }catch (\Exception $exception){
             DB::rollBack();
             \Illuminate\Support\Facades\Log::emergency('File: ' . $exception->getFile() . 'Line: ' . $exception->getLine() . 'Message: ' . $exception->getMessage());
@@ -176,9 +175,9 @@ class AdminController extends Controller
     public function destroy(int $id): Application|Response|ResponseFactory
     {
         if($id == auth('admin')->id()){
-            return responseApiFalse(404, translate("can't delete your own admin"));
+            return responseApiFalse(404, translate("can't delete your own customer"));
         }
-        Admin::destroy($id);
+        User::destroy($id);
         return responseApi(200, translate('destroy success'));
     }
     /**
@@ -188,19 +187,8 @@ class AdminController extends Controller
      */
     public function restore(int $id): Application|Response|ResponseFactory
     {
-        Admin::where('id',$id)->restore();
+        User::where('id',$id)->restore();
         return responseApi(200, translate('restore success'));
     }
-    /**
-     * check password for admin.
-     * @param Request $request
-     * @return Application|Response|\Illuminate\Contracts\Foundation\Application|ResponseFactory
-     */
-    public function checkPassword(Request $request): Application|Response|\Illuminate\Contracts\Foundation\Application|ResponseFactory
-    {
-        if(\Hash::check($request->password, auth('admin')->user()->password)) {
-            return responseApi(200, translate('password success'),);
-        }
-        return responseApiFalse(405, 'Password is incorrect');
-    }
+
 }
