@@ -8,11 +8,13 @@ use Modules\Setting\App\Http\resources\Api\AreaResource;
 use Modules\Setting\App\Http\resources\Api\CityResource;
 use Modules\Sort\App\Http\Resources\OperationTypeResource;
 use Modules\Sort\App\Http\Resources\PropertyTypeResource;
+use Modules\Sort\App\Http\Resources\RouteTypeResource;
+use Modules\Sort\App\Http\Resources\TransactionPaymentResource;
 use Modules\Sort\App\Http\Resources\TransactionStatusResource;
 use Modules\Sort\App\Models\TransactionStatus;
 use function Symfony\Component\String\b;
 
-class TransactionListResource extends JsonResource
+class TransactionResource extends JsonResource
 {
     /**
      * Transform the resource into an array.
@@ -37,19 +39,24 @@ class TransactionListResource extends JsonResource
             'user_name'=>$this->user?->name,
             'city'=>new CityResource($this->city),
             'area'=>new AreaResource($this->area),
+            'address'=>$this->address,
+            'lat'=>$this->lat,
+            'lng'=>$this->lng,
             'property_type'=>new PropertyTypeResource($this->property_type),
             'operation_type'=>new OperationTypeResource($this->operation_type),
+            'route_type'=>new RouteTypeResource($this->route_type),
             'cancelBy_type'=>$this->cancel_by,
             'cancelBy'=>$this->cancelBy ? [
                 'id'=>$this->cancelBy?->id,
                 'name'=>$this->cancelBy?->name
-            ] : null,
+        ] : null,
 
             'updatedBy'=>$this->updatedBy ? [
                 'id'=>$this->updatedBy?->id,
                 'name'=>$this->updatedBy?->name
             ] : null,
             'cancellation_reason'=>$this->cancellation_reason?->title,
+            'payments'=>TransactionPaymentResource::collection($this->payments),
             'created_at'=>$this->created_at?->format('d-m-Y h:i A'),
             'updated_at'=>$this->updated_at?->format('d-m-Y h:i A'),
             'deleted_at'=>$this->deleted_at?->format('d-m-Y h:i A'),

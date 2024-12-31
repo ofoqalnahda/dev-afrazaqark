@@ -13,7 +13,7 @@ use Spatie\MediaLibrary\InteractsWithMedia;
 class TransactionStatus extends Model implements TranslatableContract ,HasMedia
 {
     use HasFactory, Translatable,InteractsWithMedia;
-    public $translatedAttributes = ['title'];
+    public array $translatedAttributes = ['title'];
     public $table = 'transaction_statuses';
     public $translationForeignKey = 'status_id';
     protected $guarded=[];
