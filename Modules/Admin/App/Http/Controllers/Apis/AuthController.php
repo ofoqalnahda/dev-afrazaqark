@@ -13,9 +13,9 @@ use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
+use Modules\Admin\App\Http\resources\AdminResource;
 use Modules\Admin\App\Models\Admin;
 use Modules\Auth\Util\AuthUtil;
-use Modules\Admin\App\Http\resources\NotificationResource;
 use Illuminate\Support\Facades\Config;
 
 class AuthController extends ApiController
@@ -165,7 +165,7 @@ class AuthController extends ApiController
             'access_token' => $token,
             'token_type' => 'bearer',
             'expires_in' => null,//auth('admin')->factory()->getTTL() * 60,
-            'admin' => new NotificationResource(auth('admin')->user())
+            'admin' => new AdminResource(auth('admin')->user())
         ];
     }
     public function getAllPermission()
@@ -185,7 +185,7 @@ class AuthController extends ApiController
     {
         try {
             $admin = auth('admin')->user();
-            return responseApi(200,'', new NotificationResource($admin));
+            return responseApi(200,'', new AdminResource($admin));
         } catch (\Exception $exception) {
             Log::emergency('File: ' . $exception->getFile() . 'Line: ' . $exception->getLine() . 'Message: ' . $exception->getMessage());
             return responseApiFalse(500, translate('Something went wrong'));
@@ -216,7 +216,7 @@ class AuthController extends ApiController
                 $admin->addMediaFromRequest('image')->toMediaCollection('images');
             }
             DB::commit();
-            return responseApi(200, translate('admin updated'), new NotificationResource($admin));
+            return responseApi(200, translate('admin updated'), new AdminResource($admin));
         } catch (\Exception $exception) {
 
             DB::rollBack();
