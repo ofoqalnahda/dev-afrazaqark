@@ -13,11 +13,11 @@ class SettingController extends Controller
 
     public  function index(){
 
-        $data['logo']=asset('assets/images/'.\Settings::get('logo','settings/logo.png'));
         $data['address']=\Settings::get('address_'.app()->getLocale(),'المنطقه 5 الرياض  السعوديه');
         $data['phone']=\Settings::get('phone','+96617228997');
         $data['second_phone']=\Settings::get('second_phone','+96617228998');
         $data['whatsapp']=\Settings::get('whatsapp','+96617228998');
+        $data['logo']=asset('assets/images/'.\Settings::get('logo','settings/logo.png'));
         $data['email']=\Settings::get('email','ttb_111@hotmail.com');
         $data['second_email']=\Settings::get('second_email','ttb_111@hotmail.com');
         $data['link_map']=\Settings::get('link_map');

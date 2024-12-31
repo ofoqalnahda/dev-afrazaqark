@@ -1,6 +1,6 @@
 <?php
 
-namespace Modules\Setting\App\Http\Controllers\Dashboard;
+namespace Modules\Info\App\Http\Controllers\Dashboard;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Contracts\Routing\ResponseFactory;
@@ -9,13 +9,14 @@ use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Log;
 use Modules\Admin\App\Models\Admin;
-use Modules\Setting\App\Http\resources\Dashboard\CityResource;
-use Modules\Setting\App\Models\City;
+use Modules\Info\App\Http\resources\Dashboard\FaqListResource;
+use Modules\Info\App\Http\resources\Dashboard\FaqResource;
+use Modules\Info\App\Models\Faq;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 
-class CityController extends Controller
+class FaqController extends Controller
 {
     protected $count_paginate = 10;
     public function __construct()
@@ -26,16 +27,14 @@ class CityController extends Controller
     }
     public  function index(Request $request){
         $count_paginate=$request->count_paginate?:$this->count_paginate;
-        $cities=City::when($request->search , function ($q) use ($request){
+        $Faqs=Faq::when($request->search , function ($q) use ($request){
             $q->whereTranslationLike('title','%'. $request->search .'%');
-        })->when($request->area_id , function ($q) use ($request)   {
-            $q->where('area_id',$request->area_id);
-        })->with('translations')->paginate($count_paginate);
+        })->orderBy('sort')->paginate($count_paginate);
         $data=[
-            'cities'=>CityResource::collection($cities),
-            'count'=>$cities->total(),
-            'current_page'=>$cities->currentPage(),
-            'last_page'=>$cities->lastPage(),
+            'Faqs'=>FaqListResource::collection($Faqs),
+            'count'=>$Faqs->total(),
+            'current_page'=>$Faqs->currentPage(),
+            'last_page'=>$Faqs->lastPage(),
         ];
 
         return responseApi(200, translate('return_data_success'),$data );
@@ -45,9 +44,10 @@ class CityController extends Controller
     {
 
         $validator = Validator::make($request->all(), [
+            'sort' => 'required|numeric',
             'ar' => 'required|array',
-            'area_id' => 'required|exists:areas,id',
             'ar.title' => 'required|string',
+            'ar.description' => 'required|string',
         ]);
 
         if ($validator->fails())
@@ -56,12 +56,9 @@ class CityController extends Controller
 
         try {
             $data = $request->all();
-
-            $city = City::create($data);
-
-
+            $Faq = Faq::create($data);
             DB::commit();
-            return responseApi(200, translate('return_data_success'), new  CityResource($city));
+            return responseApi(200, translate('return_data_success'), new  FaqResource($Faq));
 
         } catch (\Exception $e) {
             DB::rollBack();
@@ -71,11 +68,11 @@ class CityController extends Controller
 
 
     public  function show ($id ){
-        $city = City::whereId($id)->with('translations')->first();
-        if(!$city){
-            return responseApiFalse(500, translate('city not found'));
+        $Faq = Faq::whereId($id)->with('translations')->first();
+        if(!$Faq){
+            return responseApiFalse(500, translate('Faq not found'));
         }
-        return responseApi(200, translate('return_data_success'), new  CityResource($city));
+        return responseApi(200, translate('return_data_success'), new  FaqResource($Faq));
     }
     public  function update ($id,Request $request){
         $validator = Validator::make($request->all(), [
@@ -89,18 +86,18 @@ class CityController extends Controller
         try {
             DB::beginTransaction();
 
-            $city = City::whereId($id)->first();
+            $Faq = Faq::whereId($id)->first();
             $data = $request->all();
 
-           if(!$city){
-                return responseApiFalse(500, __('site.city not found'));
+           if(!$Faq){
+                return responseApiFalse(500, __('site.Faq not found'));
             }
 
-            $city->update($data);
+            $Faq->update($data);
 
 
             DB::commit();
-            return responseApi(200, translate('return_data_success'), new CityResource($city));
+            return responseApi(200, translate('return_data_success'), new FaqResource($Faq));
 
         }catch (\Exception $e){
             DB::rollback();
@@ -115,17 +112,17 @@ class CityController extends Controller
      */
     public function updateStatus( $id): Application|Response|\Illuminate\Contracts\Foundation\Application|ResponseFactory
     {
-        $city=  City::where('id', $id)->first();
-        if(!$city){
-            return responseApiFalse(404, translate('City not found'));
+        $Faq=  Faq::where('id', $id)->first();
+        if(!$Faq){
+            return responseApiFalse(404, translate('Faq not found'));
         }
 
         try {
             DB::beginTransaction();
-            $city->status = ($city->status - 1) * -1;
-            $city->save();
+            $Faq->status = ($Faq->status - 1) * -1;
+            $Faq->save();
             DB::commit();
-            return responseApi(200, translate('update City success'));
+            return responseApi(200, translate('update Faq success'));
         }catch (\Exception $exception){
             DB::rollBack();
             Log::emergency('File: ' . $exception->getFile() . 'Line: ' . $exception->getLine() . 'Message: ' . $exception->getMessage());
@@ -135,11 +132,11 @@ class CityController extends Controller
     public function destroy($id)
     {
 
-        $city = City::whereId($id)->first();
-        if(!$city){
-            return responseApiFalse(500, translate('city not found'));
+        $Faq = Faq::whereId($id)->first();
+        if(!$Faq){
+            return responseApiFalse(500, translate('Faq not found'));
         }
-        $city->delete();
+        $Faq->delete();
         return responseApi(200);
 
     }

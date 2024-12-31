@@ -21,9 +21,9 @@ Route::prefix('v1/dashboard')->name('api.')->group(function () {
 
 
 
-    Route::get('/transactions', [TransactionController::class,'index']);
     Route::Post('transactions/accept-transaction', [TransactionController::class,'AcceptTransaction']);
     Route::Post('transactions/set-value-transaction', [TransactionController::class,'AuthorityPaymentReceipt']);
     Route::Post('transactions/payment-confirmation', [TransactionController::class,'PaymentConfirmation']);
+    Route::resource('/transactions', TransactionController::class);
 
 });

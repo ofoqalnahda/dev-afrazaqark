@@ -48,7 +48,6 @@ class DataOfTransactionSeeder extends Seeder
         return [
             [
                 'sort'=>1,
-                'price'=>20,
                 'en' => [
                     'title' => 'general',
                 ],
@@ -58,7 +57,6 @@ class DataOfTransactionSeeder extends Seeder
             ],
             [
                 'sort'=>2,
-                'price'=>50,
                 'en' => [
                     'title' => 'distinct',
                 ],

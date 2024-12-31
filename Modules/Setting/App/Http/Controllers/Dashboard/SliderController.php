@@ -6,7 +6,9 @@ use App\Http\Controllers\Controller;
 use Illuminate\Contracts\Routing\ResponseFactory;
 use Illuminate\Foundation\Application;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Log;
+use Modules\Admin\App\Models\Admin;
 use Modules\Home\App\Models\Slider;
 use Modules\Setting\App\Http\resources\Dashboard\SliderResource;
 use Illuminate\Http\Request;
@@ -16,13 +18,18 @@ use Illuminate\Support\Facades\Validator;
 class SliderController extends Controller
 {
     protected $count_paginate = 10;
-
+    public function __construct()
+    {
+        Config::set( 'jwt.user', 'App\Models\Provider' );
+        Config::set( 'auth.providers.users.model', Admin::class );
+        $this->middleware('auth.gard:admin');
+    }
     public  function index(Request $request){
         $count_paginate=$request->count_paginate?:$this->count_paginate;
         $sliders=Slider::paginate($count_paginate);
         $data=[
             'sliders'=>SliderResource::collection($sliders),
-            'count'=>$sliders->count(),
+            'count'=>$sliders->total(),
             'current_page'=>$sliders->currentPage(),
             'last_page'=>$sliders->lastPage(),
         ];
@@ -66,7 +73,7 @@ class SliderController extends Controller
 
         } catch (\Exception $e) {
             DB::rollBack();
-            return response()->json(['error' => $e->getMessage()], 500);
+           return responseApiFalse(500, __('site.same_error'));
         }
     }
 

@@ -6,6 +6,12 @@ use Astrotomic\Translatable\Contracts\Translatable as TranslatableContract;
 use Astrotomic\Translatable\Translatable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Modules\Admin\App\Models\Admin;
+use Modules\Auth\App\Models\User;
+use Modules\Setting\App\Models\Area;
+use Modules\Setting\App\Models\City;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 
@@ -15,39 +21,66 @@ class Transaction extends Model implements HasMedia
     protected $guarded=[];
     protected $appends=['first_img'];
 
-    public function getFirstImgAttribute()
+    public function getFirstImgAttribute(): string
     {
-        $return=  $this->getFirstMediaUrl('building_facade_image')?:'';
-
-        return  $return;
+        return $this->getFirstMediaUrl('building_facade_image')?:'';
     }
 
-    public function property_type()
+    public function updatedBy(): BelongsTo
+    {
+        return $this->belongsTo(Admin::class,'updated_by','id');
+    }
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class,'user_id','id');
+    }
+    public function property_type(): BelongsTo
     {
         return $this->belongsTo(PropertyType::class,'property_type_id','id');
     }
-    public function operation_type()
+    public function city(): BelongsTo
+    {
+        return $this->belongsTo(City::class,'city_id','id');
+    }
+    public function area(): BelongsTo
+    {
+        return $this->belongsTo(Area::class,'area_id','id');
+    }
+
+    public function operation_type(): BelongsTo
     {
         return $this->belongsTo(OperationType::class,'operation_type_id','id');
     }
-    public function transaction_status()
+    public function transaction_status(): BelongsTo
     {
         return $this->belongsTo(TransactionStatus::class,'status_id','id');
     }
-    public function transaction_sub_status()
+    public function transaction_sub_status(): BelongsTo
     {
         return $this->belongsTo(TransactionStatus::class,'sub_status_id','id');
     }
-    public function cancellation_reason()
+    public function cancellation_reason(): BelongsTo
     {
         return $this->belongsTo( CancellationReason::class,'reason_id','id');
     }
 
-    public function payments(): \Illuminate\Database\Eloquent\Relations\HasMany
+    public function payments(): HasMany
     {
         return $this->hasMany(TransactionPayment::class);
 
     }
+
+    public function cancelBy(): BelongsTo
+    {
+        if ($this->cancel_by == 'Admin'){
+            return $this->belongsTo( Admin::class,'cancel_by_id','id');
+        }
+
+        return $this->belongsTo( User::class,'cancel_by_id','id');
+
+
+    }
+
 
 
 

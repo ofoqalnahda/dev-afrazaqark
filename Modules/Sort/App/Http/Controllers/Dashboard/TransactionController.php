@@ -8,7 +8,9 @@ use Illuminate\Foundation\Application;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Config;
 use Modules\Admin\App\Models\Admin;
+use Modules\Setting\App\Http\resources\Dashboard\AreaResource;
 use Modules\Sort\App\Http\Resources\Dashboard\TransactionListResource;
+use Modules\Sort\App\Http\Resources\Dashboard\TransactionResource;
 use Modules\Sort\App\Models\Transaction;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -17,6 +19,8 @@ use Modules\Sort\Services\TransactionService;
 
 class TransactionController extends Controller
 {
+    protected $count_paginate = 10;
+
     protected TransactionService $transactionSer;
     public function __construct( TransactionService $transactionSer)
     {
@@ -27,8 +31,25 @@ class TransactionController extends Controller
     }
 
     public  function index(Request $request): Application|Response|ResponseFactory{
-        $transactions=Transaction::filterAds($request->query())->get();
-        return responseApi(200, translate('return_data_success'), TransactionListResource::collection($transactions));
+        $count_paginate=$request->count_paginate?:$this->count_paginate;
+
+        $transactions=Transaction::filterAds($request->query())->latest()->paginate($count_paginate);
+        $data=[
+            'transactions'=>TransactionListResource::collection($transactions),
+            'count'=>$transactions->total(),
+            'current_page'=>$transactions->currentPage(),
+            'last_page'=>$transactions->lastPage(),
+        ];
+        return responseApi(200, translate('return_data_success'),$data);
+
+    }
+
+    public  function show(int $transaction_id): Application|Response|ResponseFactory{
+        $transaction=Transaction::whereId($transaction_id)->first();
+        if(!$transaction){
+            return responseApiFalse(405, translate('This transaction is not found'));
+        }
+        return responseApi(200, translate('return_data_success'), new TransactionResource($transaction));
 
     }
     Public function AcceptTransaction(Request $request): Application|Response|ResponseFactory{
@@ -54,7 +75,8 @@ class TransactionController extends Controller
             $transaction->update([
                 'sub_status_id'=>6,
             ]);
-
+            $transaction->updated_by = auth('admin')->id();
+            $transaction->save();
             $this->transactionSer->CreatePayment($request->price,'App',$transaction);
 
             DB::commit();
@@ -97,7 +119,8 @@ class TransactionController extends Controller
                 'status_id'=>2,
                 'sub_status_id'=>10,
             ]);
-
+            $transaction->updated_by = auth('admin')->id();
+            $transaction->save();
             $this->transactionSer->CreatePayment($request->amount,'AuthorityInvoice',$transaction);
             if($request->file('authority_payment_receipt')){
                $transaction->addMediaFromRequest('authority_payment_receipt')->toMediaCollection('authority_invoice');
@@ -147,7 +170,8 @@ class TransactionController extends Controller
                     'sub_status_id'=>1
                 ]);
             }
-
+            $transaction->updated_by = auth('admin')->id();
+            $transaction->save();
             DB::commit();
             return responseApi(200, translate('Payment has been successfully confirmed'));
         } catch (\Exception $e) {
